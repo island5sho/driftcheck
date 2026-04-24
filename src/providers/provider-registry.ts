@@ -1,25 +1,42 @@
-import { CloudProvider, EnvProvider } from './types';
-import { DotenvProvider } from './dotenv-provider';
+import { Provider } from './types';
 
-const registry = new Map<CloudProvider, EnvProvider>();
+const registry = new Map<string, Provider>();
 
-export function registerProvider(provider: EnvProvider): void {
+/**
+ * Register a provider instance under its name.
+ * Throws if a provider with the same name is already registered.
+ */
+export function registerProvider(provider: Provider): void {
+  if (registry.has(provider.name)) {
+    throw new Error(`Provider "${provider.name}" is already registered.`);
+  }
   registry.set(provider.name, provider);
 }
 
-export function getProvider(name: CloudProvider): EnvProvider {
+/**
+ * Retrieve a registered provider by name.
+ * Throws if no provider is found with that name.
+ */
+export function getProvider(name: string): Provider {
   const provider = registry.get(name);
   if (!provider) {
     throw new Error(
-      `Provider "${name}" is not registered. Available: ${[...registry.keys()].join(', ')}`
+      `Provider "${name}" is not registered. Available: ${listProviders().join(', ') || 'none'}`
     );
   }
   return provider;
 }
 
-export function listProviders(): CloudProvider[] {
-  return [...registry.keys()];
+/**
+ * List all registered provider names.
+ */
+export function listProviders(): string[] {
+  return Array.from(registry.keys());
 }
 
-// Register built-in providers
-registerProvider(new DotenvProvider());
+/**
+ * Remove all registered providers (useful for test isolation).
+ */
+export function clearProviders(): void {
+  registry.clear();
+}
