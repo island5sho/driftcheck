@@ -1,44 +1,50 @@
 # Doppler Provider
 
-The `DopplerProvider` fetches secrets from [Doppler](https://www.doppler.com/), a universal secrets manager.
+The `DopplerProvider` fetches environment variables from a [Doppler](https://doppler.com) project config using the Doppler API.
+
+## Configuration
+
+| Option    | Type     | Required | Description                              |
+|-----------|----------|----------|------------------------------------------|
+| `token`   | `string` | Yes      | Doppler service token or personal token  |
+| `project` | `string` | Yes      | Doppler project name                     |
+| `config`  | `string` | Yes      | Doppler config name (e.g. `prd`, `stg`)  |
 
 ## Usage
 
-```ts
-import { DopplerProvider } from "./doppler-provider";
-
-const client = new DopplerSDK({ accessToken: process.env.DOPPLER_TOKEN });
+```typescript
+import { DopplerProvider } from './doppler-provider';
 
 const staging = new DopplerProvider({
-  project: "my-app",
-  config: "staging",
-  client,
+  token: process.env.DOPPLER_STG_TOKEN!,
+  project: 'my-app',
+  config: 'stg',
 });
 
 const production = new DopplerProvider({
-  project: "my-app",
-  config: "production",
-  client,
+  token: process.env.DOPPLER_PRD_TOKEN!,
+  project: 'my-app',
+  config: 'prd',
 });
+
+const stagingVars = await staging.getVariables();
+const productionVars = await production.getVariables();
 ```
 
-## Options
+## Integration Tests
 
-| Option    | Type             | Description                                |
-|-----------|------------------|--------------------------------------------|
-| `project` | `string`         | The Doppler project name                   |
-| `config`  | `string`         | The Doppler config (e.g. `staging`, `prd`) |
-| `client`  | `DopplerClient`  | A Doppler SDK client instance              |
-
-## Authentication
-
-Set the `DOPPLER_TOKEN` environment variable with a **Service Token** scoped to the project and config you want to read.
+Set the following environment variables to run integration tests:
 
 ```bash
-export DOPPLER_TOKEN="dp.st.staging.xxxx"
+export DOPPLER_TEST_TOKEN=dp.st.xxxx
+export DOPPLER_TEST_PROJECT=my-app
+export DOPPLER_TEST_CONFIG=stg
+
+npx jest doppler-provider.integration
 ```
 
 ## Notes
 
-- Only `raw` secret values are returned (not computed values).
-- Secrets are returned as a flat key/value `EnvMap`.
+- Uses the Doppler REST API (`https://api.doppler.com/v3/configs/config/secrets`).
+- Only secret values (not metadata) are returned.
+- Doppler injects some built-in keys (e.g. `DOPPLER_PROJECT`, `DOPPLER_CONFIG`, `DOPPLER_ENVIRONMENT`). These are included in the output.
