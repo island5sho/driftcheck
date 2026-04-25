@@ -53,10 +53,28 @@ describe('formatReport', () => {
     expect(output).toContain('DEBUG');
   });
 
+  it('shows missing entry for production-only key', () => {
+    const report = makeReport({
+      hasDrift: true,
+      driftCount: 1,
+      entries: [{ key: 'SECRET_KEY', severity: 'missing', productionValue: 'abc123', message: '' }],
+    });
+    const output = formatReport(report);
+    expect(output).toContain('MISSING IN STAGING');
+    expect(output).toContain('SECRET_KEY');
+  });
+
   it('formatReportJson returns valid JSON', () => {
     const report = makeReport();
     const json = formatReportJson(report);
     expect(() => JSON.parse(json)).not.toThrow();
     expect(JSON.parse(json)).toHaveProperty('hasDrift', false);
+  });
+
+  it('formatReportJson includes driftCount and totalKeys', () => {
+    const report = makeReport({ driftCount: 3, totalKeys: 10 });
+    const parsed = JSON.parse(formatReportJson(report));
+    expect(parsed).toHaveProperty('driftCount', 3);
+    expect(parsed).toHaveProperty('totalKeys', 10);
   });
 });
