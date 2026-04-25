@@ -46,7 +46,16 @@ export class AwsSsmProvider implements Provider {
         NextToken: nextToken,
       });
 
-      const response = await client.send(command);
+      let response;
+      try {
+        response = await client.send(command);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        throw new Error(
+          `aws-ssm provider failed to fetch parameters at path "${this.options.pathPrefix}": ${message}`
+        );
+      }
+
       nextToken = response.NextToken;
 
       for (const param of response.Parameters ?? []) {
