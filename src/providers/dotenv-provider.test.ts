@@ -41,4 +41,18 @@ describe('DotenvProvider', () => {
     expect(vars).toHaveLength(1);
     expect(vars[0].key).toBe('FOO');
   });
+
+  it('should handle values containing equals signs', async () => {
+    mockFs.existsSync.mockReturnValue(true);
+    mockFs.readFileSync.mockReturnValue('CONNECTION_STRING=host=localhost;port=5432\n');
+
+    const vars = await provider.fetchVariables('staging', config);
+    expect(vars).toHaveLength(1);
+    expect(vars[0]).toEqual({
+      key: 'CONNECTION_STRING',
+      value: 'host=localhost;port=5432',
+      source: 'dotenv',
+      environment: 'staging',
+    });
+  });
 });
