@@ -21,17 +21,26 @@ const RUN = process.env.RUN_INTEGRATION_TESTS === 'true';
 
   let provider: HashiCorpVaultProvider;
 
-  beforeAll(async () => {
-    provider = new HashiCorpVaultProvider({ addr, token, mount, path });
-    // Seed test data via fetch
-    await fetch(`${addr}/v1/${mount}/data/${path}`, {
+  /**
+   * Seeds a key/value map into Vault at the configured mount and path.
+   */
+  async function seedVaultSecret(data: Record<string, string>): Promise<void> {
+    const res = await fetch(`${addr}/v1/${mount}/data/${path}`, {
       method: 'POST',
       headers: {
         'X-Vault-Token': token,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ data: { API_KEY: 'integration-value', TIMEOUT: '30' } }),
+      body: JSON.stringify({ data }),
     });
+    if (!res.ok) {
+      throw new Error(`Failed to seed Vault secret: ${res.status} ${res.statusText}`);
+    }
+  }
+
+  beforeAll(async () => {
+    provider = new HashiCorpVaultProvider({ addr, token, mount, path });
+    await seedVaultSecret({ API_KEY: 'integration-value', TIMEOUT: '30' });
   });
 
   it('fetches secrets and returns a config map', async () => {
